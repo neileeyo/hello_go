@@ -108,8 +108,9 @@ func (w openWeatherMap) temperature(city string) (float64, error) {
 		return 0, err
 	}
 
-	log.Printf("openWeatherMap: %s: %.2f", city, d.Main.Kelvin)
-	return d.Main.Kelvin, nil
+	farenheit := convertKtoF(d.Main.Kelvin)
+	log.Printf("openweathermap: %s: %.2f", city, farenheit)
+	return farenheit, nil
 }
 
 type darkSky struct {
@@ -117,7 +118,6 @@ type darkSky struct {
 }
 
 func (w darkSky) temperature(city string) (float64, error) {
-	// TODO: will need to find a latitude and longitude from city string
 	lat, long, err := findLatitudeLongitude(city)
 	if err != nil {
 		log.Printf("Failed to find latitude and longitude for %s.\n%s", city, err)
@@ -142,10 +142,9 @@ func (w darkSky) temperature(city string) (float64, error) {
 		return 0, err
 	}
 
-	// TODO: write a conversion function for kelvin
-	kelvin := (d.Currently.Temperature + 459.67) * 5 / 9 
-	log.Printf("darksky: %s: %.2f", city, kelvin)
-	return kelvin, nil
+	farenheit := d.Currently.Temperature
+	log.Printf("darksky: %s: %.2f", city, farenheit)
+	return farenheit, nil
 }
 
 func findLatitudeLongitude(city string) (float64, float64, error) {
@@ -166,11 +165,15 @@ func findLatitudeLongitude(city string) (float64, float64, error) {
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(&d); err != nil {
-		log.Printf("Lat_long struct:\n%T", d)
+		log.Printf("Decode latitude / longitude struct failed")
 		return 0, 0, err
 	}
 	log.Printf("opencagedata: %s: lat=%f, long=%f", city, d.Results[0].Geometry.Lat, d.Results[0].Geometry.Lng)
 	return d.Results[0].Geometry.Lat, d.Results[0].Geometry.Lng, nil
 
 	// return 45.512230, -122.658722, nil // stub for Portland, OR
+}
+
+func convertKtoF(f float64) (float64) {
+	return f * 9.0 / 5.0 - 459.67
 }
